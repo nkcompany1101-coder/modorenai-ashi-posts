@@ -1,0 +1,32 @@
+name: publish
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # 15分ごとに予約表を確認する
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: publish
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 時刻が来た投稿を出す
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        run: python publish.py
+      - name: 予約表の状態を保存する
+        if: always()
+        run: |
+          git config user.name "publish-bot"
+          git config user.email "publish-bot@users.noreply.github.com"
+          git add schedule.json
+          git diff --cached --quiet || (git commit -m "予約表を更新" && git push)
