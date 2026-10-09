@@ -5,5 +5,12 @@
     "status": "scheduled",
     "title": "03_体験_自己紹介",
     "type": "carousel"
+  },
+  {
+    "id": "2026-W42-01",
+    "at": "2026-10-12T20:00+09:00",
+    "status": "scheduled",
+    "title": "01_研究_足の筋肉",
+    "type": "carousel"
   }
 ]
