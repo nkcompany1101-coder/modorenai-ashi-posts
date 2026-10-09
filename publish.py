@@ -33,7 +33,7 @@ def api(method, path, **params):
 
 
 def wait_ready(container_id):
-    for _ in range(30):
+    for _ in range(75):  # 動画の取り込みは数分かかることがある
         status = api("GET", container_id, fields="status_code").get("status_code")
         if status == "FINISHED":
             return
@@ -55,15 +55,21 @@ def publish(item):
     ig = os.environ["IG_USER_ID"]
     folder = ROOT / "posts" / item["id"]
     caption = (folder / "caption.txt").read_text(encoding="utf-8").strip()
-    images = sorted(p.name for p in folder.glob("*.jpg"))
-    if not 2 <= len(images) <= 10:
-        raise RuntimeError(f"画像は2〜10枚にしてください（{len(images)}枚）")
     done = already_posted(ig, caption)
     if done:
         return done
 
     repo = os.environ["GITHUB_REPOSITORY"]
     base = f"https://raw.githubusercontent.com/{repo}/main/posts/{urllib.parse.quote(item['id'])}"
+    if item.get("type") == "reel":
+        reel = api("POST", f"{ig}/media", media_type="REELS", video_url=f"{base}/reel.mp4", caption=caption, share_to_feed="true")["id"]
+        wait_ready(reel)
+        media = api("POST", f"{ig}/media_publish", creation_id=reel)["id"]
+        return api("GET", media, fields="permalink").get("permalink", "")
+
+    images = sorted(p.name for p in folder.glob("*.jpg"))
+    if not 2 <= len(images) <= 10:
+        raise RuntimeError(f"画像は2〜10枚にしてください（{len(images)}枚）")
     children = []
     for name in images:
         child = api("POST", f"{ig}/media", image_url=f"{base}/{name}", is_carousel_item="true")["id"]
